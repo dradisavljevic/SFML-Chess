@@ -1,6 +1,7 @@
 #include <SFML/Graphics.hpp>
 #include <time.h>
 #include <iostream>
+#include <string>
 
 using namespace sf;
 
@@ -43,7 +44,7 @@ Vector2f toCoord(char a, char b) {
     return Vector2f(x*size, y*size);
 }
 
-void move(std::string str) {
+void move(std::string str, std::string lastPosition) {
     Vector2f oldPos = toCoord(str[0], str[1]);
     Vector2f newPos = toCoord(str[2], str[3]);
     
@@ -63,12 +64,31 @@ void move(std::string str) {
             }
             f[i].sprite.setPosition(newPos);
             f[i].moves += 1;
+            
+            if (abs(f[i].value)==6 && lastPosition!="") {
+                int pawnDirection;
+                if (f[i].isWhite == true) {
+                    pawnDirection = 1;
+                } else {
+                    pawnDirection = -1;
+                }
+                Vector2f enPassantPos = Vector2f(newPos.x, newPos.y+size*pawnDirection);
+                std::string lastPosString = lastPosition.substr( lastPosition.length() - 2 );
+                std::cout<<lastPosString<<"AH"<<std::endl;
+                Vector2f lastPos = toCoord(lastPosString[0], lastPosString[1]);
+                
+                if (enPassantPos == lastPos) {
+                    for (int j=0; j<32; j++)
+                        if (f[j].sprite.getPosition()==enPassantPos) f[j].sprite.setPosition(-100, -100);
+                }
+            }
         }
     
-    if (str=="e1g1") if (position.find("e1")==-1) move("h1f1");
-    if (str=="e8g8") if (position.find("e8")==-1) move("h8f8");
-    if (str=="e1c1") if (position.find("e1")==-1) move("a1d1");
-    if (str=="e8c8") if (position.find("e8")==-1) move("a8d8");
+    
+    if (str=="e1g1") if (position.find("e1")==-1) move("h1f1", "");
+    if (str=="e8g8") if (position.find("e8")==-1) move("h8f8", "");
+    if (str=="e1c1") if (position.find("e1")==-1) move("a1d1", "");
+    if (str=="e8c8") if (position.find("e8")==-1) move("a8d8", "");
 }
 
 void loadPosition() {
@@ -89,8 +109,11 @@ void loadPosition() {
             k++;
         }
     
-    for (int i=0; i<position.length(); i+=5)
-        move(position.substr(i,4));
+    std::string lastPosition = "";
+    for (int i=0; i<position.length(); i+=5) {
+        move(position.substr(i,4), lastPosition);
+        lastPosition = position.substr(i,4);
+    }
         
 }
 
@@ -203,7 +226,7 @@ bool validMove(chessSprite figure, Vector2f oldPos, Vector2f newPos) {
             if (abs(int(oldPos.x - newPos.x))<=size && abs(int(oldPos.y - newPos.y))<=size) {
                 isValid = true;
             } else if (abs(int(oldPos.x - newPos.x))==2*size && abs(int(oldPos.y - newPos.y))==0 && figure.moves==0) {
-                if (lineMovementCollision(oldPos.x, newPos.x, oldPos, 0))
+                if (lineMovementCollision(oldPos.x, newPos.x+2*size*pawnDirection, oldPos, 0))
                     return false;
                 isValid = true;
             } else {
@@ -218,8 +241,19 @@ bool validMove(chessSprite figure, Vector2f oldPos, Vector2f newPos) {
                 } else if (abs(int(oldPos.x - newPos.x))==size) {
                     if (abs(destinationFigure.value) < 7 && abs(destinationFigure.value)!=5)
                         isValid = true;
-                    else
-                        isValid = false;
+                    else {
+                        Vector2f enPassantPos = Vector2f(newPos.x, newPos.y+size*pawnDirection);
+                        std::string lastPosString = position.substr( position.length() - 3 );
+                        Vector2f lastPos = toCoord(lastPosString[0], lastPosString[1]);
+                        
+                        if (enPassantPos == lastPos) {
+                            for (int i=0; i<32; i++)
+                                if (f[i].sprite.getPosition()==enPassantPos) f[i].sprite.setPosition(-100, -100);
+                            isValid = true;
+                        } else {
+                            isValid = false;
+                        }
+                    }
                 } else {
                     if (abs(destinationFigure.value) > 6)
                         isValid = true;
@@ -242,7 +276,6 @@ int main()
     t1.loadFromFile("images/figures.png");
     t2.loadFromFile("images/board.png");
     
-
     Sprite s(t1);
     Sprite sBoard(t2);
     
@@ -299,7 +332,7 @@ int main()
                          
                  
                          if ((f[n].value==6 && str[3]=='8') || (f[n].value==-6 && str[3]=='1')){
-                             RenderWindow window2(VideoMode(454, 120), "Promote pawn to:", Style::Close);
+                             RenderWindow window2(VideoMode(454, 120), "Promote pawn to:", Style::Titlebar);
                              for(int i=0; i<4; i++){
                                  int pieces;
                                  if (f[n].value < 0)
@@ -329,7 +362,6 @@ int main()
                                              for (int i=0; i<4; i++)
                                                  if (promotionPieces[i].sprite.getGlobalBounds().contains(pos2.x, pos2.y))
                                                  {
-                                                    std::cout<<promotionPieces[i].value<<std::endl;
                                                      int pieces;
                                                      if (f[n].value < 0)
                                                          pieces = promoteBlack[i];
@@ -352,7 +384,7 @@ int main()
                              }
                                
                          }
-                         move(str);
+                         move(str, "");
                          position += str + " ";
                          std::cout<<str<<std::endl;
                          f[n].sprite.setPosition(newPos);
