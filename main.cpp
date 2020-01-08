@@ -74,10 +74,10 @@ void move(std::string str, std::string lastPosition) {
                 }
                 Vector2f enPassantPos = Vector2f(newPos.x, newPos.y+size*pawnDirection);
                 std::string lastPosString = lastPosition.substr( lastPosition.length() - 2 );
-                std::cout<<lastPosString<<"AH"<<std::endl;
-                Vector2f lastPos = toCoord(lastPosString[0], lastPosString[1]);
+                Vector2f startingPos = toCoord(lastPosString[0], lastPosString[1]);
+                Vector2f lastPos = toCoord(lastPosString[2], lastPosString[3]);
                 
-                if (enPassantPos == lastPos) {
+                if (enPassantPos == lastPos && abs(int(startingPos.y - lastPos.y))==2*size) {
                     for (int j=0; j<32; j++)
                         if (f[j].sprite.getPosition()==enPassantPos) f[j].sprite.setPosition(-100, -100);
                 }
@@ -85,10 +85,10 @@ void move(std::string str, std::string lastPosition) {
         }
     
     
-    if (str=="e1g1") if (position.find("e1")==-1) move("h1f1", "");
-    if (str=="e8g8") if (position.find("e8")==-1) move("h8f8", "");
-    if (str=="e1c1") if (position.find("e1")==-1) move("a1d1", "");
-    if (str=="e8c8") if (position.find("e8")==-1) move("a8d8", "");
+    if (str=="e1g1") if (position.substr(0,position.find(str)).find("e1")==-1) move("h1f1", "");
+    if (str=="e8g8") if (position.substr(0,position.find(str)).find("e8")==-1) move("h8f8", "");
+    if (str=="e1c1") if (position.substr(0,position.find(str)).find("e1")==-1) move("a1d1", "");
+    if (str=="e8c8") if (position.substr(0,position.find(str)).find("e8")==-1) move("a8d8", "");
 }
 
 void loadPosition() {
@@ -226,9 +226,29 @@ bool validMove(chessSprite figure, Vector2f oldPos, Vector2f newPos) {
             if (abs(int(oldPos.x - newPos.x))<=size && abs(int(oldPos.y - newPos.y))<=size) {
                 isValid = true;
             } else if (abs(int(oldPos.x - newPos.x))==2*size && abs(int(oldPos.y - newPos.y))==0 && figure.moves==0) {
-                if (lineMovementCollision(oldPos.x, newPos.x+2*size*pawnDirection, oldPos, 0))
+                int multiplier = (oldPos.x - newPos.x) < 0 ? -1 : 1;
+                if (lineMovementCollision(oldPos.x, newPos.x+2*size*multiplier, oldPos, 0))
                     return false;
-                isValid = true;
+                
+                char row;
+                
+                if (figure.isWhite) {
+                    row = 'a';
+                } else {
+                    row = 'h';
+                }
+                
+                Vector2f castleCandidate;
+                
+                if ((oldPos.x - newPos.x) > 0) {
+                    castleCandidate = toCoord(row, '1');
+                } else {
+                    castleCandidate = toCoord(row, '8');
+                }
+                isValid = false;
+                for (int i=0; i<32; i++)
+                    if (f[i].sprite.getPosition()==castleCandidate && f[i].moves == 0) isValid = true;
+                
             } else {
                 isValid = false;
             }
@@ -243,10 +263,11 @@ bool validMove(chessSprite figure, Vector2f oldPos, Vector2f newPos) {
                         isValid = true;
                     else {
                         Vector2f enPassantPos = Vector2f(newPos.x, newPos.y+size*pawnDirection);
-                        std::string lastPosString = position.substr( position.length() - 3 );
-                        Vector2f lastPos = toCoord(lastPosString[0], lastPosString[1]);
+                        std::string lastPosString = position.substr( position.length() - 5 );
+                        Vector2f startingPos = toCoord(lastPosString[2], lastPosString[3]);
+                        Vector2f lastPos = toCoord(lastPosString[2], lastPosString[3]);
                         
-                        if (enPassantPos == lastPos) {
+                        if (enPassantPos == lastPos && abs(int(startingPos.y - lastPos.y))==2*size) {
                             for (int i=0; i<32; i++)
                                 if (f[i].sprite.getPosition()==enPassantPos) f[i].sprite.setPosition(-100, -100);
                             isValid = true;
