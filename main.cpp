@@ -28,6 +28,7 @@ int board[8][8] =
      6, 6, 6, 6, 6, 6, 6, 6,
      1, 2, 3, 4, 5, 3, 2, 1};
 
+// Figures inside the promotion widnow
 int promoteWhite[4] = {1,2,3,4};
 
 int promoteBlack[4] = {-1, -2, -3, -4};
@@ -36,14 +37,17 @@ int promotions[16];
 
 int promotionIndex = 0;
 
+// All the moves played so far
 std::string position = "";
 
+// Convert chess notation to coordinates on the chess board
 Vector2f toCoord(char a, char b) {
     int x = int(a) - 97;
     int y = 7 - int(b) + 49;
     return Vector2f(x*size, y*size);
 }
 
+// move figure to position
 void move(std::string str, std::string lastPosition) {
     Vector2f oldPos = toCoord(str[0], str[1]);
     Vector2f newPos = toCoord(str[2], str[3]);
@@ -73,7 +77,7 @@ void move(std::string str, std::string lastPosition) {
                     pawnDirection = -1;
                 }
                 Vector2f enPassantPos = Vector2f(newPos.x, newPos.y+size*pawnDirection);
-                std::string lastPosString = lastPosition.substr( lastPosition.length() - 2 );
+                std::string lastPosString = lastPosition.substr( lastPosition.length() - 4 );
                 Vector2f startingPos = toCoord(lastPosString[0], lastPosString[1]);
                 Vector2f lastPos = toCoord(lastPosString[2], lastPosString[3]);
                 
@@ -91,6 +95,7 @@ void move(std::string str, std::string lastPosition) {
     if (str=="e8c8") if (position.substr(0,position.find(str)).find("e8")==-1) move("a8d8", "");
 }
 
+// Load initial position, or backtrack all the moves after an undo
 void loadPosition() {
     int k=0;
     for (int i=0; i<8; i++)
@@ -117,6 +122,7 @@ void loadPosition() {
         
 }
 
+// Convert position to chess notation
 std::string toChessNote(Vector2f p) {
     std::string s = "";
     s += char(p.x/size+97);
@@ -124,6 +130,7 @@ std::string toChessNote(Vector2f p) {
     return s;
 }
 
+// If there is any piece in line between figure and destination, prevent movement
 bool lineMovementCollision(int oldCoord, int newCoord, Vector2f oldPos, int axis) {
     int squares = abs(int(oldCoord - newCoord))/size;
     int multiplier = (oldCoord - newCoord) < 0 ? 1 : -1;
@@ -139,6 +146,7 @@ bool lineMovementCollision(int oldCoord, int newCoord, Vector2f oldPos, int axis
     return false;
 }
 
+// If there is any piece in diagonal, prevent movement
 bool diagonalMovementCollision(Vector2f oldPos, Vector2f newPos) {
     int squares = abs(int(oldPos.x - newPos.x))/size;
     int multiplierX = (oldPos.x - newPos.x) < 0 ? 1 : -1;
@@ -153,10 +161,68 @@ bool diagonalMovementCollision(Vector2f oldPos, Vector2f newPos) {
     return false;
 }
 
+// Check if check occured
+void check(bool colour) {
+    chessSprite king;
+    for (int i=0; i<32; i++) {
+        if (abs(f[i].value) == 5 && f[i].isWhite==colour) {
+            king = f[i];
+        }
+    }
+    
+    int pawnDirection;
+    if (colour == true) {
+        pawnDirection = -1;
+    } else {
+        pawnDirection = 1;
+    }
+    
+    chessSprite rivalPieces[16];
+    
+    int k=0;
+    for (int i=0; i<32; i++){
+        if (f[i].isWhite!=king.isWhite && f[i].sprite.getPosition()!=Vector2f(-100, -100)) {
+            rivalPieces[k] = f[i];
+            k++;
+        }
+    }
+    
+    for (int i=0; i<(sizeof(rivalPieces)/sizeof(rivalPieces[0])); i++){
+        switch(abs(rivalPieces[i].value)) {
+            case 1:
+                if ((!lineMovementCollision(king.sprite.getPosition().y, rivalPieces[i].sprite.getPosition().y, rivalPieces[i].sprite.getPosition(), 1) && rivalPieces[i].sprite.getPosition().x==king.sprite.getPosition().x) || (!lineMovementCollision(king.sprite.getPosition().x, rivalPieces[i].sprite.getPosition().x, rivalPieces[i].sprite.getPosition(), 0) && rivalPieces[i].sprite.getPosition().y==king.sprite.getPosition().y))
+                    std::cout<<"CHECK1"<<std::endl;
+                break;
+            case 2:
+                if ((abs(int(rivalPieces[i].sprite.getPosition().x - king.sprite.getPosition().x))==size && abs(int(rivalPieces[i].sprite.getPosition().y - king.sprite.getPosition().y))==2*size) || (abs(int(rivalPieces[i].sprite.getPosition().x - king.sprite.getPosition().x))==2*size && abs(int(rivalPieces[i].sprite.getPosition().y - king.sprite.getPosition().y))==size))
+                    std::cout<<"CHECK2"<<std::endl;
+                break;
+            case 3:
+                if (!diagonalMovementCollision(king.sprite.getPosition(), rivalPieces[i].sprite.getPosition()) && abs(int(king.sprite.getPosition().x - rivalPieces[i].sprite.getPosition().x))==abs(int(king.sprite.getPosition().y - rivalPieces[i].sprite.getPosition().y)))
+                    std::cout<<"CHECK3"<<std::endl;
+                break;
+            case 4:
+                if ((!lineMovementCollision(king.sprite.getPosition().y, rivalPieces[i].sprite.getPosition().y, rivalPieces[i].sprite.getPosition(), 1) && rivalPieces[i].sprite.getPosition().x==king.sprite.getPosition().x) || (!lineMovementCollision(king.sprite.getPosition().x, rivalPieces[i].sprite.getPosition().x, rivalPieces[i].sprite.getPosition(), 0) && rivalPieces[i].sprite.getPosition().y==king.sprite.getPosition().y) || (!diagonalMovementCollision(king.sprite.getPosition(), rivalPieces[i].sprite.getPosition())  && abs(int(king.sprite.getPosition().x - rivalPieces[i].sprite.getPosition().x))==abs(int(king.sprite.getPosition().y - rivalPieces[i].sprite.getPosition().y))))
+                    std::cout<<"CHECK4"<<std::endl;
+                break;
+            case 5:
+                // King can't be bothered to put other king in check
+                break;
+            case 6:
+                if (abs(int(rivalPieces[i].sprite.getPosition().x-king.sprite.getPosition().x))==size && (rivalPieces[i].sprite.getPosition().y-king.sprite.getPosition().y)==size*pawnDirection)
+                    std::cout<<"CHECK6"<<std::endl;
+                break;
+        }
+    }
+
+}
+
+// Check validity of a move. Function takes in figure, starting position and it's ending position
 bool validMove(chessSprite figure, Vector2f oldPos, Vector2f newPos) {
     bool isValid = false;
     int pawnDirection;
     
+    // In which directions should pawn move
     if (figure.isWhite == true) {
         pawnDirection = 1;
     } else {
@@ -168,6 +234,7 @@ bool validMove(chessSprite figure, Vector2f oldPos, Vector2f newPos) {
     for (int i=0; i<32; i++)
         if (f[i].sprite.getPosition()==newPos) destinationFigure = f[i];
     
+    // If there is a figure and it is not opposing, prevent eating. Same for any king piece.
     if ((abs(destinationFigure.value) < 7 && figure.isWhite == destinationFigure.isWhite) || abs(destinationFigure.value)==5)
     {
         return false;
@@ -230,22 +297,25 @@ bool validMove(chessSprite figure, Vector2f oldPos, Vector2f newPos) {
                 if (lineMovementCollision(oldPos.x, newPos.x+2*size*multiplier, oldPos, 0))
                     return false;
                 
-                char row;
                 
+                // Check for possibility of castling
+                char row;
                 if (figure.isWhite) {
                     row = 'a';
                 } else {
                     row = 'h';
                 }
                 
-                Vector2f castleCandidate;
-                
+                char column;
                 if ((oldPos.x - newPos.x) > 0) {
-                    castleCandidate = toCoord(row, '1');
+                    column = '1';
                 } else {
-                    castleCandidate = toCoord(row, '8');
+                    column = '8';
                 }
+                
+                Vector2f castleCandidate = toCoord(row, column);
                 isValid = false;
+                // If the rook hasn't moved
                 for (int i=0; i<32; i++)
                     if (f[i].sprite.getPosition()==castleCandidate && f[i].moves == 0) isValid = true;
                 
@@ -262,9 +332,10 @@ bool validMove(chessSprite figure, Vector2f oldPos, Vector2f newPos) {
                     if (abs(destinationFigure.value) < 7 && abs(destinationFigure.value)!=5)
                         isValid = true;
                     else {
+                        // Check for possibility of en passant. If it is the last move opponent played.
                         Vector2f enPassantPos = Vector2f(newPos.x, newPos.y+size*pawnDirection);
                         std::string lastPosString = position.substr( position.length() - 5 );
-                        Vector2f startingPos = toCoord(lastPosString[2], lastPosString[3]);
+                        Vector2f startingPos = toCoord(lastPosString[0], lastPosString[1]);
                         Vector2f lastPos = toCoord(lastPosString[2], lastPosString[3]);
                         
                         if (enPassantPos == lastPos && abs(int(startingPos.y - lastPos.y))==2*size) {
@@ -276,6 +347,7 @@ bool validMove(chessSprite figure, Vector2f oldPos, Vector2f newPos) {
                         }
                     }
                 } else {
+                    // Pawns can't eat in straight line, only diagonal
                     if (abs(destinationFigure.value) > 6)
                         isValid = true;
                     else
@@ -291,8 +363,10 @@ bool validMove(chessSprite figure, Vector2f oldPos, Vector2f newPos) {
 
 int main()
 {
+    // Render SFML main window
     RenderWindow window(VideoMode(908, 910), "The Chess!", Style::Close);
 
+    // Setup chess board and pieces
     Texture t1, t2;
     t1.loadFromFile("images/figures.png");
     t2.loadFromFile("images/board.png");
@@ -319,6 +393,7 @@ int main()
                 window.close();
             
             if (e.type == Event::KeyPressed) {
+                // Undo function
                 if (e.key.code == Keyboard::BackSpace)
                 {
                     if (position.length() > 5 )
@@ -328,8 +403,14 @@ int main()
                         loadPosition();
                     }
                 }
+                
+                if (e.key.code == Keyboard::N)
+                {
+                    check(true);
+                }
             }
             
+            // Piece movement
             if (e.type == Event::MouseButtonPressed)
                 if (e.key.code == Mouse::Left)
                     for (int i=0; i<32; i++)
@@ -351,7 +432,8 @@ int main()
                      if (validMove(f[n], oldPos, newPos)) {
                          str = toChessNote(oldPos)+toChessNote(newPos);
                          
-                 
+                         
+                         // Should the pawn reach opposite side backline, open promotion windo
                          if ((f[n].value==6 && str[3]=='8') || (f[n].value==-6 && str[3]=='1')){
                              RenderWindow window2(VideoMode(454, 120), "Promote pawn to:", Style::Titlebar);
                              for(int i=0; i<4; i++){
@@ -415,6 +497,7 @@ int main()
                      }
                  }
             
+            // dragging
             if (isMove) f[n].sprite.setPosition(pos.x - dx, pos.y - dy);
         }
 
