@@ -162,7 +162,7 @@ bool diagonalMovementCollision(Vector2f oldPos, Vector2f newPos) {
 }
 
 // Check if check occured
-void check(bool colour) {
+bool check(bool colour) {
     chessSprite king;
     for (int i=0; i<32; i++) {
         if (abs(f[i].value) == 5 && f[i].isWhite==colour) {
@@ -191,30 +191,30 @@ void check(bool colour) {
         switch(abs(rivalPieces[i].value)) {
             case 1:
                 if ((!lineMovementCollision(king.sprite.getPosition().y, rivalPieces[i].sprite.getPosition().y, rivalPieces[i].sprite.getPosition(), 1) && rivalPieces[i].sprite.getPosition().x==king.sprite.getPosition().x) || (!lineMovementCollision(king.sprite.getPosition().x, rivalPieces[i].sprite.getPosition().x, rivalPieces[i].sprite.getPosition(), 0) && rivalPieces[i].sprite.getPosition().y==king.sprite.getPosition().y))
-                    std::cout<<"CHECK1"<<std::endl;
+                    return true;
                 break;
             case 2:
                 if ((abs(int(rivalPieces[i].sprite.getPosition().x - king.sprite.getPosition().x))==size && abs(int(rivalPieces[i].sprite.getPosition().y - king.sprite.getPosition().y))==2*size) || (abs(int(rivalPieces[i].sprite.getPosition().x - king.sprite.getPosition().x))==2*size && abs(int(rivalPieces[i].sprite.getPosition().y - king.sprite.getPosition().y))==size))
-                    std::cout<<"CHECK2"<<std::endl;
+                    return true;
                 break;
             case 3:
                 if (!diagonalMovementCollision(king.sprite.getPosition(), rivalPieces[i].sprite.getPosition()) && abs(int(king.sprite.getPosition().x - rivalPieces[i].sprite.getPosition().x))==abs(int(king.sprite.getPosition().y - rivalPieces[i].sprite.getPosition().y)))
-                    std::cout<<"CHECK3"<<std::endl;
+                    return true;
                 break;
             case 4:
                 if ((!lineMovementCollision(king.sprite.getPosition().y, rivalPieces[i].sprite.getPosition().y, rivalPieces[i].sprite.getPosition(), 1) && rivalPieces[i].sprite.getPosition().x==king.sprite.getPosition().x) || (!lineMovementCollision(king.sprite.getPosition().x, rivalPieces[i].sprite.getPosition().x, rivalPieces[i].sprite.getPosition(), 0) && rivalPieces[i].sprite.getPosition().y==king.sprite.getPosition().y) || (!diagonalMovementCollision(king.sprite.getPosition(), rivalPieces[i].sprite.getPosition())  && abs(int(king.sprite.getPosition().x - rivalPieces[i].sprite.getPosition().x))==abs(int(king.sprite.getPosition().y - rivalPieces[i].sprite.getPosition().y))))
-                    std::cout<<"CHECK4"<<std::endl;
+                    return true;
                 break;
             case 5:
                 // King can't be bothered to put other king in check
                 break;
             case 6:
                 if (abs(int(rivalPieces[i].sprite.getPosition().x-king.sprite.getPosition().x))==size && (rivalPieces[i].sprite.getPosition().y-king.sprite.getPosition().y)==size*pawnDirection)
-                    std::cout<<"CHECK6"<<std::endl;
+                    return true;
                 break;
         }
     }
-
+    return false;
 }
 
 // Check validity of a move. Function takes in figure, starting position and it's ending position
@@ -361,6 +361,164 @@ bool validMove(chessSprite figure, Vector2f oldPos, Vector2f newPos) {
     return isValid;
 }
 
+bool moveInLine(chessSprite piece, int step, int dx, int dy, bool colour) {
+    int beginning;
+    if (dx!=0) {
+        beginning = piece.sprite.getPosition().x;
+    } else {
+        beginning = piece.sprite.getPosition().y;
+    }
+    for (int j=beginning; j<8*size && j>0; j+=step){
+        Vector2f initialPosition = piece.sprite.getPosition();
+        if (validMove(piece, initialPosition, Vector2f(initialPosition.x+(dx*j), initialPosition.y+(dy*j)))) {
+            piece.sprite.setPosition(initialPosition.x+(dx*j), initialPosition.y+(dy*j));
+            if (!check(colour)){
+                return true;
+            }
+            piece.sprite.setPosition(initialPosition);
+        }
+        else
+            break;
+    }
+    
+    return false;
+}
+
+bool moveDiagonal(chessSprite piece, int step, bool colour) {
+    for (int j=piece.sprite.getPosition().x; j<8*size && j>0; j+=step){
+        Vector2f initialPosition = piece.sprite.getPosition();
+        if (validMove(piece, initialPosition, Vector2f(initialPosition.x+j, initialPosition.y+j))) {
+            piece.sprite.setPosition(initialPosition.x+j, initialPosition.y+j);
+            if (!check(colour)){
+                return true;
+            }
+            piece.sprite.setPosition(initialPosition);
+        }
+        else
+            break;
+    }
+    
+    return false;
+}
+
+bool getValidMoves(bool colour) {
+    chessSprite king;
+    for (int i=0; i<32; i++) {
+        if (abs(f[i].value) == 5 && f[i].isWhite==colour) {
+            king = f[i];
+        }
+    }
+    
+    chessSprite possiblePieces[16];
+    
+    int k=0;
+    for (int i=0; i<32; i++){
+        if (f[i].isWhite==king.isWhite && f[i].sprite.getPosition()!=Vector2f(-100, -100)) {
+            possiblePieces[k] = f[i];
+            k++;
+        }
+    }
+    
+    for (int i=0; i<(sizeof(possiblePieces)/sizeof(possiblePieces[0])); i++){
+        std::cout<<possiblePieces[i].value<<std::endl;
+        switch(abs(possiblePieces[i].value)) {
+            case 1:
+                if (moveInLine(possiblePieces[i], size, 1, 0, colour))
+                    return true;
+                if (moveInLine(possiblePieces[i], size, 0, 1, colour))
+                    return true;
+                if (moveInLine(possiblePieces[i], -1*size, 1, 0, colour))
+                    return true;
+                if (moveInLine(possiblePieces[i], -1*size, 0, 1, colour))
+                    return true;
+                break;
+            case 2:
+                for (int k = -2; k<=2; k++){
+                    for (int j = -2; j<=2; j++) {
+                        if (k==0 || j==0 || abs(j)==abs(k))
+                            continue;
+                        Vector2f initialPosition = possiblePieces[i].sprite.getPosition();
+                        if (initialPosition.x+k*size<8*size && initialPosition.x+k*size>0 && initialPosition.y+j*size<8*size && initialPosition.y+j*size>0)
+                            if (validMove(possiblePieces[i], initialPosition, Vector2f(initialPosition.x+k*size, initialPosition.y+j*size))) {
+                                possiblePieces[i].sprite.setPosition(initialPosition.x+k*size, initialPosition.y+j*size);
+                                if (!check(colour)){
+                                    return true;
+                                }
+                                possiblePieces[i].sprite.setPosition(initialPosition);
+                            }
+                    }
+                }
+                break;
+            case 3:
+                if (moveDiagonal(possiblePieces[i], size, colour))
+                    return true;
+                if (moveDiagonal(possiblePieces[i], -1*size, colour))
+                    return true;
+                break;
+            case 4:
+                if (moveInLine(possiblePieces[i], size, 1, 0, colour))
+                    return true;
+                if (moveInLine(possiblePieces[i], size, 0, 1, colour))
+                    return true;
+                if (moveInLine(possiblePieces[i], -1*size, 1, 0, colour))
+                    return true;
+                if (moveInLine(possiblePieces[i], -1*size, 0, 1, colour))
+                    return true;
+                if (moveDiagonal(possiblePieces[i], size, colour))
+                    return true;
+                if (moveDiagonal(possiblePieces[i], -1*size, colour))
+                    return true;
+                break;
+            case 5:
+                for (int k = -1; k<=1; k++){
+                    for (int j = -1; j<=1; j++) {
+                        if (k==0 && j==0)
+                            continue;
+                        Vector2f initialPosition = possiblePieces[i].sprite.getPosition();
+                        if (initialPosition.x+k*size<8*size && initialPosition.x+k*size>0 && initialPosition.y+j*size<8*size && initialPosition.y+j*size>0)
+                            if (validMove(possiblePieces[i], initialPosition, Vector2f(initialPosition.x+k*size, initialPosition.y+j*size))) {
+                                possiblePieces[i].sprite.setPosition(initialPosition.x+k*size, initialPosition.y+j*size);
+                                if (!check(colour)){
+                                    return true;
+                                }
+                                possiblePieces[i].sprite.setPosition(initialPosition);
+                            }
+                    }
+                }
+                break;
+            case 6:
+                for (int j=1; j<=2; j++) {
+                    if (j==1) {
+                        for (int k=-1; k<=1; k++) {
+                            
+                            Vector2f initialPosition = possiblePieces[i].sprite.getPosition();
+                            if (initialPosition.x+k*size<8*size && initialPosition.x+k*size>0 && initialPosition.y+j*size<8*size)
+                                if (validMove(possiblePieces[i], initialPosition, Vector2f(initialPosition.x+k*size, initialPosition.y+j*size))) {
+                                    possiblePieces[i].sprite.setPosition(initialPosition.x+k*size, initialPosition.y+j*size);
+                                    if (!check(colour)){
+                                        return true;
+                                    }
+                                    possiblePieces[i].sprite.setPosition(initialPosition);
+                                }
+                        }
+                    } else {
+                        Vector2f initialPosition = possiblePieces[i].sprite.getPosition();
+                        if (initialPosition.y+j*size<8*size)
+                            if (validMove(possiblePieces[i], initialPosition, Vector2f(initialPosition.x, initialPosition.y+j*size))) {
+                                possiblePieces[i].sprite.setPosition(initialPosition.x, initialPosition.y+j*size);
+                                if (!check(colour)){
+                                    return true;
+                                }
+                                possiblePieces[i].sprite.setPosition(initialPosition);
+                            }
+                    }
+                }
+                break;
+        }
+    }
+    return false;
+}
+
 int main()
 {
     // Render SFML main window
@@ -402,11 +560,6 @@ int main()
                         promotionIndex = 0;
                         loadPosition();
                     }
-                }
-                
-                if (e.key.code == Keyboard::N)
-                {
-                    check(true);
                 }
             }
             
@@ -492,6 +645,10 @@ int main()
                          std::cout<<str<<std::endl;
                          f[n].sprite.setPosition(newPos);
                          f[n].moves += 1;
+                         if (check(!f[n].isWhite))
+                             std::cout<<"CHECK"<<std::endl;
+                         if (getValidMoves(!f[n].isWhite))
+                             std::cout<<"STILL NOT A MATE"<<std::endl;
                      } else {
                          f[n].sprite.setPosition(oldPos);
                      }
