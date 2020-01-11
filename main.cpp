@@ -234,7 +234,7 @@ bool validMove(chessSprite figure, Vector2f oldPos, Vector2f newPos) {
     for (int i=0; i<32; i++)
         if (f[i].sprite.getPosition()==newPos) destinationFigure = f[i];
     
-    // If there is a figure and it is not opposing, prevent eating. Same for any king piece.
+    // If there is a figure and it is not opposing, prevent capture. Same for any king piece.
     if ((abs(destinationFigure.value) < 7 && figure.isWhite == destinationFigure.isWhite) || abs(destinationFigure.value)==5)
     {
         return false;
@@ -403,25 +403,43 @@ bool moveInLine(chessSprite piece, int step, int dx, int dy, bool colour) {
     return false;
 }
 
-bool moveDiagonal(chessSprite piece, int step, bool colour) {
-    for (int j=piece.sprite.getPosition().x+step; j<8*size && j>=0; j+=step){
-        Vector2f initialPosition = piece.sprite.getPosition();
-        if (validMove(piece, initialPosition, Vector2f(initialPosition.x+j, initialPosition.y+j))) {
-            int movingPieceIndex=-2;
-            for (int l=0; l<32; l++) {
-                if(f[l].sprite.getPosition()==initialPosition)
-                    movingPieceIndex = l;
-            }
-            f[movingPieceIndex].sprite.setPosition(initialPosition.x+j, initialPosition.y+j);
-            if (!check(colour)){
+bool moveDiagonal(chessSprite piece, int dx, int dy, bool colour) {
+    int beginningX = piece.sprite.getPosition().x;
+    int beginningY = piece.sprite.getPosition().y;
+    Vector2f initialPosition = piece.sprite.getPosition();
+    
+    while (beginningX<8*size && beginningX>=0 && beginningY<8*size && beginningY>=0) {
+        beginningX+=dx*size;
+        beginningY+=dy*size;
+        if (validMove(piece, initialPosition, Vector2f(beginningX, beginningY))) {
+                int movingPieceIndex=-2;
+                for (int l=0; l<32; l++) {
+                    if(f[l].sprite.getPosition()==initialPosition)
+                        movingPieceIndex = l;
+                }
+                f[movingPieceIndex].sprite.setPosition(beginningX, beginningY);
+                int destinationPieceIndex=-2;
+                bool isCaptured=false;
+                for (int i=0; i<32; i++) {
+                    if (f[i].sprite.getPosition()==Vector2f(beginningX, beginningY) && f[i].isWhite!=piece.isWhite){
+                        isCaptured=true;
+                        destinationPieceIndex=i;
+                        f[destinationPieceIndex].sprite.setPosition(-100, -100);
+                    }
+                }
+                if (!check(colour)){
+                    f[movingPieceIndex].sprite.setPosition(initialPosition);
+                    if (isCaptured)
+                        f[destinationPieceIndex].sprite.setPosition(Vector2f(beginningX, beginningY));
+                    return true;
+                }
                 f[movingPieceIndex].sprite.setPosition(initialPosition);
-                return true;
+                if (isCaptured)
+                    f[destinationPieceIndex].sprite.setPosition(Vector2f(beginningX , beginningY));
             }
-            f[movingPieceIndex].sprite.setPosition(initialPosition);
+            else
+                break;
         }
-        else
-            break;
-    }
     
     return false;
 }
@@ -480,9 +498,13 @@ bool getValidMoves(bool colour) {
                 }
                 break;
             case 3:
-                if (moveDiagonal(possiblePieces[i], size, colour))
+                if (moveDiagonal(possiblePieces[i], 1, 1, colour))
                     return true;
-                if (moveDiagonal(possiblePieces[i], -1*size, colour))
+                if (moveDiagonal(possiblePieces[i], 1, -1, colour))
+                    return true;
+                if (moveDiagonal(possiblePieces[i], -1, 1, colour))
+                    return true;
+                if (moveDiagonal(possiblePieces[i], -1, -1, colour))
                     return true;
                 break;
             case 4:
@@ -494,9 +516,13 @@ bool getValidMoves(bool colour) {
                     return true;
                 if (moveInLine(possiblePieces[i], -1*size, 0, 1, colour))
                     return true;
-                if (moveDiagonal(possiblePieces[i], size, colour))
+                if (moveDiagonal(possiblePieces[i], 1, 1, colour))
                     return true;
-                if (moveDiagonal(possiblePieces[i], -1*size, colour))
+                if (moveDiagonal(possiblePieces[i], 1, -1, colour))
+                    return true;
+                if (moveDiagonal(possiblePieces[i], -1, 1, colour))
+                    return true;
+                if (moveDiagonal(possiblePieces[i], -1, -1, colour))
                     return true;
                 break;
             case 5:
@@ -643,7 +669,7 @@ int main()
                          str = toChessNote(oldPos)+toChessNote(newPos);
                          
                          
-                         // Should the pawn reach opposite side backline, open promotion windo
+                         // Should the pawn reach opposite side backline, open promotion window
                          if ((f[n].value==6 && str[3]=='8') || (f[n].value==-6 && str[3]=='1')){
                              RenderWindow window2(VideoMode(454, 120), "Promote pawn to:", Style::Titlebar);
                              for(int i=0; i<4; i++){
@@ -697,17 +723,71 @@ int main()
                              }
                                
                          }
+                         int destinationIndex = -2;
+                         for (int l=0; l<32; l++) {
+                             if (f[l].sprite.getPosition()==newPos)
+                                 destinationIndex = l;
+                         }
                          move(str, "");
-                         position += str + " ";
-                         std::cout<<str<<std::endl;
                          f[n].sprite.setPosition(newPos);
-                         f[n].moves += 1;
-                         if (check(!f[n].isWhite) && getValidMoves(!f[n].isWhite))
+                         if(!check(f[n].isWhite)) {
+                             f[n].moves += 1;
+                             position += str + " ";
+                             std::cout<<str<<std::endl;
+                         } else {
+                             f[n].sprite.setPosition(oldPos);
+                             if (destinationIndex!= -2){
+                                 f[destinationIndex].sprite.setPosition(newPos);
+                             }
+                         }
+                         if (check(!f[n].isWhite) && getValidMoves(!f[n].isWhite)) {
                              std::cout<<"CHECK"<<std::endl;
-                         if (check(!f[n].isWhite) && !getValidMoves(!f[n].isWhite))
+                             for (int l=0; l<32;l++) {
+                                 if (abs(f[l].value)==5 && f[l].isWhite!=f[n].isWhite) {
+                                     f[l].sprite.setColor(Color(100,0,0));
+                                 }
+                             }
+                         } else {
+                             if (!check(f[n].isWhite)) {
+                                 Color usualColor = Color(100,100,100);
+                                 for (int l=0; l<32;l++) {
+                                     if (abs(f[l].value)==1 && f[l].isWhite==f[n].isWhite) {
+                                         usualColor = f[l].sprite.getColor();
+                                     }
+                                     if (abs(f[l].value)==5 && f[l].isWhite==f[n].isWhite) {
+                                         f[l].sprite.setColor(usualColor);
+                                     }
+                                 }
+                             }
+                         }
+                         if (check(!f[n].isWhite) && !getValidMoves(!f[n].isWhite)) {
                              std::cout<<"CHECK MATE"<<std::endl;
-                         if (!check(!f[n].isWhite) && !getValidMoves(!f[n].isWhite))
+                             for (int l=0; l<32;l++) {
+                                 if (abs(f[l].value)==5 && f[l].isWhite!=f[n].isWhite) {
+                                     f[l].sprite.setColor(Color(100,0,100));
+                                 }
+                             }
+                         } else {
+                             if (!check(f[n].isWhite)) {
+                                 Color usualColor = Color(100,100,100);
+                                 for (int l=0; l<32;l++) {
+                                     if (abs(f[l].value)==1 && f[l].isWhite==f[n].isWhite) {
+                                         usualColor = f[l].sprite.getColor();
+                                     }
+                                     if (abs(f[l].value)==5 && f[l].isWhite==f[n].isWhite) {
+                                         f[l].sprite.setColor(usualColor);
+                                     }
+                                 }
+                             }
+                         }
+                         if (!check(!f[n].isWhite) && !getValidMoves(!f[n].isWhite)) {
                              std::cout<<"STALEMATE"<<std::endl;
+                             for (int l=0; l<32;l++) {
+                                 if (abs(f[l].value)==5) {
+                                     f[l].sprite.setColor(Color(100,100,10));
+                                 }
+                             }
+                         }
                      } else {
                          f[n].sprite.setPosition(oldPos);
                      }
