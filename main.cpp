@@ -12,7 +12,7 @@ struct chessSprite {
   int moves = 0;
 };
 
-// Size of each square
+// Size of each square.
 int size = 113;
 
 // Array of pieces
@@ -68,24 +68,24 @@ Vector2f toCoord(char a, char b) {
 }
 
 /**
-* Moves piece from one square to another, based on the string value.
-*
-*  Takes in chess notation string and converts it into position. Checks for en passant
-*  and castling along the way.
-*
-* @param str string value of the move in chess notation e.g. a1b2.
-* @param lastMove string value of the previous move. Used to check for en passant.
-*/
+ * Moves piece from one square to another, based on the string value.
+ *
+ *  Takes in chess notation string and converts it into position. Checks for en passant
+ *  and castling along the way.
+ *
+ * @param str string value of the move in chess notation e.g. a1b2.
+ * @param lastMove string value of the previous move. Used to check for en passant.
+ */
 void move(std::string str, std::string lastMove) {
   Vector2f oldPos = toCoord(str[0], str[1]);
   Vector2f newPos = toCoord(str[2], str[3]);
 
-  // In case of capture move previous figure
+  // In case of capture move previous figure.
   for (int i = 0; i < 32; i++)
     if (f[i].sprite.getPosition() == newPos)
       f[i].sprite.setPosition(-100, -100);
 
-  // Move piece
+  // Move piece.
   for (int i = 0; i < 32; i++)
     if (f[i].sprite.getPosition() == oldPos) {
       if ((f[i].value == 6 && str[3] == '8') ||
@@ -98,11 +98,11 @@ void move(std::string str, std::string lastMove) {
         promotionIndex += 1;
       }
       f[i].sprite.setPosition(newPos);
-      // Other player is on the move
+      // Make it so the other player is on the move.
       onMove = !f[i].isWhite;
       f[i].moves += 1;
 
-      // Check for en passant if the piece on the move is a pawn.
+      // Check for en passant if the piece on the move is Pawn.
       if (abs(f[i].value) == 6 && lastMove != "") {
         int pawnDirection;
         if (f[i].isWhite == true) {
@@ -143,13 +143,13 @@ void move(std::string str, std::string lastMove) {
 }
 
 /**
-* Convert  screen coordinates to chess notation.
-*
-* Creates a string of chess notation from the screen coordinates of pieces.
-*
-* @param p Vector2f coordinates of the piece on screen.
-* @return s chess notation of the pieces movement.
-*/
+ * Convert  screen coordinates to chess notation.
+ *
+ * Creates a string of chess notation from the screen coordinates of pieces.
+ *
+ * @param p Vector2f coordinates of the piece on screen.
+ * @return chess notation of the pieces movement.
+ */
 std::string toChessNote(Vector2f p) {
   std::string s = "";
   s += char(p.x / size + 97);
@@ -158,17 +158,17 @@ std::string toChessNote(Vector2f p) {
 }
 
 /**
-* Check for collision for pieces moving in straight line (Queen or Rook).
-*
-* Prevents movement if there is any piece in between the starting and
-* end destination of the moving piece.
-*
-* @param oldCoord starting position of the piece on X or Y axis.
-* @param newCoord ending position of the piece on X or Y axis.
-* @param oldPos starting coordinates of the piece on screen.
-* @param axis integer value of axis on which movement occurs. 0 = X axis; 1 = Y axis.
-* @return whether or not collision during movement occurred.
-*/
+ * Check for collision for pieces moving in straight line (Queen or Rook).
+ *
+ * Prevents movement if there is any piece in between the starting and
+ * end destination of the moving piece.
+ *
+ * @param oldCoord starting position of the piece on X or Y axis.
+ * @param newCoord ending position of the piece on X or Y axis.
+ * @param oldPos starting coordinates of the piece on screen.
+ * @param axis integer value of axis on which movement occurs. 0 = X axis; 1 = Y axis.
+ * @return whether or not collision during movement occurred.
+ */
 bool lineMovementCollision(int oldCoord, int newCoord, Vector2f oldPos,
                            int axis) {
   int squares = abs(int(oldCoord - newCoord)) / size;
@@ -187,15 +187,15 @@ bool lineMovementCollision(int oldCoord, int newCoord, Vector2f oldPos,
 }
 
 /**
-* Check for collision for pieces moving in diagonal (Queen or Bishop).
-*
-* Prevents movement if there is any piece in between the starting and
-* end destination of the moving piece.
-*
-* @param oldPos starting coordinates of the piece on screen.
-* @param newPos destination coordinates of the piece on screen.
-* @return whether or not collision during movement occurred.
-*/
+ * Check for collision for pieces moving in diagonal (Queen or Bishop).
+ *
+ * Prevents movement if there is any piece in between the starting and
+ * end destination of the moving piece.
+ *
+ * @param oldPos starting coordinates of the piece on screen.
+ * @param newPos destination coordinates of the piece on screen.
+ * @return whether or not collision during movement occurred.
+ */
 bool diagonalMovementCollision(Vector2f oldPos, Vector2f newPos) {
   int squares = abs(int(oldPos.x - newPos.x)) / size;
   int multiplierX = (oldPos.x - newPos.x) < 0 ? 1 : -1;
@@ -212,14 +212,14 @@ bool diagonalMovementCollision(Vector2f oldPos, Vector2f newPos) {
 }
 
 /**
-* Check whether or not check has occurred with the current layout of pieces on board.
-*
-* Goes through all the opposing pieces and checks one by one if
-* if they are endangering the king piece.
-*
-* @param colour of the player for which check is performed. True = white; False = black.
-* @return whether or not check has occurred.
-*/
+ * Check whether or not check has occurred with the current layout of pieces on board.
+ *
+ * Goes through all the opposing pieces and checks one by one if
+ * if they are endangering the king piece.
+ *
+ * @param colour of the player for which check is performed. True = white; False = black.
+ * @return whether or not check has occurred.
+ */
 bool check(bool colour) {
   chessSprite king;
   for (int i = 0; i < 32; i++) {
@@ -228,7 +228,7 @@ bool check(bool colour) {
     }
   }
 
-  // Direction in which pawns should move.
+  // Direction in which Pawns should move.
   int pawnDirection;
   if (colour == true) {
     pawnDirection = -1;
@@ -251,7 +251,7 @@ bool check(bool colour) {
   for (int i = 0; i < k; i++) {
     switch (abs(rivalPieces[i].value)) {
     case 1:
-      // If there is no collision in line, the rooks are putting opposing king in check
+      // If there is no collision in line, the Rooks are putting opposing King in check.
       if ((!lineMovementCollision(king.sprite.getPosition().y,
                                   rivalPieces[i].sprite.getPosition().y,
                                   rivalPieces[i].sprite.getPosition(), 1) &&
@@ -265,7 +265,7 @@ bool check(bool colour) {
         return true;
       break;
     case 2:
-      // If king is with the "L" shape from knight, check has occurred.
+      // If King is with the "L" shape from Knight, check has occurred.
       if ((abs(int(rivalPieces[i].sprite.getPosition().x -
                    king.sprite.getPosition().x)) == size &&
            abs(int(rivalPieces[i].sprite.getPosition().y -
@@ -277,7 +277,7 @@ bool check(bool colour) {
         return true;
       break;
     case 3:
-      // If there is no collision in diagonal, bishop is putting king in check.
+      // If there is no collision in diagonal, Bishop is putting King in check.
       if (!diagonalMovementCollision(king.sprite.getPosition(),
                                      rivalPieces[i].sprite.getPosition()) &&
           abs(int(king.sprite.getPosition().x -
@@ -287,7 +287,7 @@ bool check(bool colour) {
         return true;
       break;
     case 4:
-      // If there is no collision in diagonal or in line, queen is putting opposign king in check.
+      // If there is no collision in diagonal or in line, Queen is putting opposign King in check.
       if ((!lineMovementCollision(king.sprite.getPosition().y,
                                   rivalPieces[i].sprite.getPosition().y,
                                   rivalPieces[i].sprite.getPosition(), 1) &&
@@ -307,10 +307,10 @@ bool check(bool colour) {
         return true;
       break;
     case 5:
-      // King can't be bothered to put other king in check.
+      // King can't be bothered to put other King in check.
       break;
     case 6:
-      // If king is diagonal of the pawn, check has occurred.
+      // If King is diagonal of the Pawn, check has occurred.
       if (abs(int(rivalPieces[i].sprite.getPosition().x -
                   king.sprite.getPosition().x)) == size &&
           (rivalPieces[i].sprite.getPosition().y -
@@ -323,20 +323,20 @@ bool check(bool colour) {
 }
 
 /**
-* Check whether or not attempted move is valid.
-*
-* Checks for collision and overall validity of the move. E.g. you can't capture your own pieces.
-*
-* @param figure a piece that is being moved.
-* @param oldPos position of the piece before movement.
-* @param newPos destination of the piece.
-* @return whether or not the move is valid.
-*/
+ * Check whether or not attempted move is valid.
+ *
+ * Checks for collision and overall validity of the move. E.g. you can't capture your own pieces.
+ *
+ * @param figure a piece that is being moved.
+ * @param oldPos position of the piece before movement.
+ * @param newPos destination of the piece.
+ * @return whether or not the move is valid.
+ */
 bool isValidMove(chessSprite figure, Vector2f oldPos, Vector2f newPos) {
   bool isValid = false;
   int pawnDirection;
 
-  // In which directions should pawn move
+  // In which directions should pawn move.
   if (figure.isWhite == true) {
     pawnDirection = 1;
   } else {
@@ -349,8 +349,8 @@ bool isValidMove(chessSprite figure, Vector2f oldPos, Vector2f newPos) {
     if (f[i].sprite.getPosition() == newPos)
       destinationFigure = f[i];
 
-  // If there is a piece and it is not opposing, prevent capture. Same for any
-  // king piece.
+  // If there is a piece and it is not opposing, prevent capture.
+  // Same for both King pieces.
   if ((abs(destinationFigure.value) < 7 &&
        figure.isWhite == destinationFigure.isWhite) ||
       abs(destinationFigure.value) == 5) {
@@ -362,7 +362,7 @@ bool isValidMove(chessSprite figure, Vector2f oldPos, Vector2f newPos) {
 
   switch (abs(figure.value)) {
   case 1:
-    // If there is no collision in line, the move is valid.
+    // If there is no collision in line, the move is valid for Rook.
     if (abs(int(oldPos.x - newPos.x)) == 0 &&
         abs(int(oldPos.y - newPos.y)) > 0) {
       if (lineMovementCollision(oldPos.y, newPos.y, oldPos, 1))
@@ -452,7 +452,7 @@ bool isValidMove(chessSprite figure, Vector2f oldPos, Vector2f newPos) {
 
       Vector2f castleCandidate = toCoord(row, column);
       isValid = false;
-      // If the rook hasn't moved.
+      // If the Rook hasn't moved.
       for (int i = 0; i < 32; i++)
         if (f[i].sprite.getPosition() == castleCandidate && f[i].moves == 0)
           isValid = true;
@@ -472,8 +472,8 @@ bool isValidMove(chessSprite figure, Vector2f oldPos, Vector2f newPos) {
             abs(destinationFigure.value) != 5)
           isValid = true;
         else {
-          // Check for possibility of en passant. If opponent moved pawn
-          // two squares in the last move.
+          // Check for possibility of en passant capture. If opponent moved
+          // Pawn two squares in the last move.
           Vector2f enPassantPos =
               Vector2f(newPos.x, newPos.y + size * pawnDirection);
           std::string lastPosString = position.substr(position.length() - 5);
@@ -491,7 +491,7 @@ bool isValidMove(chessSprite figure, Vector2f oldPos, Vector2f newPos) {
           }
         }
       } else {
-        // Pawns can't eat in straight line, only diagonal
+        // Pawns can't capture in straight line, only diagonal.
         if (abs(destinationFigure.value) > 6)
           isValid = true;
         else
@@ -506,18 +506,18 @@ bool isValidMove(chessSprite figure, Vector2f oldPos, Vector2f newPos) {
 }
 
 /**
-* Check if moving a piece in line removes check.
-*
-* For a piece that can move in line, check for each square if moving to it
-* removes check.
-*
-* @param piece a piece that is being moved.
-* @param step change to current position.
-* @param dx multiplier for X axis. If 0, the piece moves on the Y axis.
-* @param dy multiplier for Y axis. If 0, the piece moves on the X axis.
-* @param colour of the piece. True if white, False if black.
-* @return whether or not check can be removed by moving the selected piece.
-*/
+ * Check if moving a piece in line removes check.
+ *
+ * For a piece that can move in line, check for each square if moving to it
+ * removes check state.
+ *
+ * @param piece that is being moved.
+ * @param step change to current position.
+ * @param dx multiplier for X axis. If 0, the piece moves on the Y axis.
+ * @param dy multiplier for Y axis. If 0, the piece moves on the X axis.
+ * @param colour of the piece. True if white, False if black.
+ * @return whether or not check can be removed by moving the selected piece.
+ */
 bool isLineMovePossible(chessSprite piece, int step, int dx, int dy, bool colour) {
   int beginning;
   if (dx != 0) {
@@ -572,17 +572,17 @@ bool isLineMovePossible(chessSprite piece, int step, int dx, int dy, bool colour
 }
 
 /**
-* Check if moving a piece in diagonal removes check.
-*
-* For a piece that can move in diagonal, check for each square if moving to it
-* removes check.
-*
-* @param piece a piece that is being moved.
-* @param dx multiplier for X axis. Values can be either 1 or -1.
-* @param dy multiplier for Y axis. Values can be either 1 or -1.
-* @param colour of the piece. True if white, False if black.
-* @return whether or not check can be removed by moving the selected piece.
-*/
+ * Check if moving a piece in diagonal removes check.
+ *
+ * For a piece that can move in diagonal, check for each square if moving to it
+ * removes check state.
+ *
+ * @param piece a piece that is being moved.
+ * @param dx multiplier for X axis. Values can be either 1 or -1.
+ * @param dy multiplier for Y axis. Values can be either 1 or -1.
+ * @param colour of the piece. True if white, False if black.
+ * @return whether or not check can be removed by moving the selected piece.
+ */
 bool isDiagonalMovePossible(chessSprite piece, int dx, int dy, bool colour) {
   int beginningX = piece.sprite.getPosition().x;
   int beginningY = piece.sprite.getPosition().y;
@@ -599,7 +599,7 @@ bool isDiagonalMovePossible(chessSprite piece, int dx, int dy, bool colour) {
           movingPieceIndex = l;
       }
       f[movingPieceIndex].sprite.setPosition(beginningX, beginningY);
-      // If there is opposing piece on the destination square, capture it.
+      // If there is opposing piece on the destination square, simulate capture.
       int destinationPieceIndex = -2;
       bool isCaptured = false;
       for (int i = 0; i < 32; i++) {
@@ -631,14 +631,14 @@ bool isDiagonalMovePossible(chessSprite piece, int dx, int dy, bool colour) {
 
 
 /**
-* Check if there is any valid move left that get's player out of check
-*
-* For each players piece, check if moving it will leave it in check or not.
-* First occurrence returns true value.
-*
-* @param colour of the piece. True if white, False if black.
-* @return whether or not player can make any move that gets him out of check.
-*/
+ * Check if there is any valid move left that gets player out of check.
+ *
+ * For each players piece, check if moving it will leave it in check or not.
+ * First occurrence returns true value.
+ *
+ * @param colour of the piece. True if white, False if black.
+ * @return whether or not player can make any move that gets him out of check.
+ */
 bool isMovementPossible(bool colour) {
   chessSprite king;
   for (int i = 0; i < 32; i++) {
@@ -713,7 +713,7 @@ bool isMovementPossible(bool colour) {
         return true;
       break;
     case 4:
-      // Check for all 4 diagonal and all 4 in-line movements for Queen.
+      // Check for all 4 diagonal and all 4 line movements for Queen.
       if (isLineMovePossible(possiblePieces[i], size, 1, 0, colour))
         return true;
       if (isLineMovePossible(possiblePieces[i], size, 0, 1, colour))
@@ -733,7 +733,7 @@ bool isMovementPossible(bool colour) {
       break;
     case 5:
       // Check if King can be moved anywhere. Checking for castling is redundant
-      // As King can't castle if he is in check.
+      // as King can't castle if he is in check.
       for (int k = -1; k <= 1; k++) {
         for (int j = -1; j <= 1; j++) {
           if (k == 0 && j == 0)
@@ -785,7 +785,7 @@ bool isMovementPossible(bool colour) {
       // Check for pawn movement in a single direction.
       int pawnDirection;
 
-      // In which directions should pawn move
+      // In which directions should pawn move.
       if (possiblePieces[i].isWhite == false) {
         pawnDirection = 1;
       } else {
@@ -848,11 +848,11 @@ bool isMovementPossible(bool colour) {
 }
 
 /**
-* Load position of the pieces on the board based on the position string.
-*
-* Set up the board based on previous movements in case of undo motion
-* or set up a new board if it is a new game.
-*/
+ * Load position of the pieces on the board based on the position string.
+ *
+ * Set up the board based on previous movements in case of undo function
+ * or set up a new board if it is a new game.
+ */
 void loadPosition() {
   int k = 0;
   for (int i = 0; i < 8; i++)
@@ -878,7 +878,7 @@ void loadPosition() {
     lastMove = position.substr(i, 4);
   }
   // Checkmate and stalemate can't occur in the middle of the game
-  // So leaving the indicators on true makes no sense.
+  // so leaving the indicators on true makes no sense.
   checkmate = false;
   stalemate = false;
 
@@ -929,7 +929,7 @@ int main() {
         window.close();
 
       if (e.type == Event::KeyPressed) {
-        // Undo function
+        // Undo function.
         if (e.key.code == Keyboard::BackSpace) {
           if (position.length() > 5) {
             position.erase(position.length() - 6, 5);
@@ -962,8 +962,7 @@ int main() {
           if (isValidMove(f[n], oldPos, newPos)) {
             str = toChessNote(oldPos) + toChessNote(newPos);
 
-            // Should the pawn reach opposite side backline, open promotion
-            // window
+            // Should the pawn reach opposite side backline, open promotion window.
             if ((f[n].value == 6 && str[3] == '8') ||
                 (f[n].value == -6 && str[3] == '1')) {
               RenderWindow window2(VideoMode(454, 120),
@@ -1053,7 +1052,7 @@ int main() {
             } else {
               if (!check(f[n].isWhite)) {
                 // Since movement that leaves King in check is disabled, color the King back
-                // upon the movement that takes him out of check
+                // upon the movement that takes him out of check.
                 Color usualColor = Color(100, 100, 100);
                 for (int l = 0; l < 32; l++) {
                   if (abs(f[l].value) == 1 && f[l].isWhite == f[n].isWhite) {
@@ -1065,7 +1064,7 @@ int main() {
                 }
               }
             }
-            // In case of a check mate, color the King purple.
+            // In case of a checkmate, color the King purple.
             if (check(!f[n].isWhite) && !isMovementPossible(!f[n].isWhite)) {
               std::cout << "CHECK MATE" << std::endl;
               checkmate = true;
