@@ -356,7 +356,7 @@ bool isValidMove(chessSprite figure, Vector2f oldPos, Vector2f newPos) {
       abs(destinationFigure.value) == 5) {
     return false;
   }
-    
+
   if (oldPos==newPos)
     return false;
 
@@ -476,16 +476,19 @@ bool isValidMove(chessSprite figure, Vector2f oldPos, Vector2f newPos) {
           // Pawn two squares in the last move.
           Vector2f enPassantPos =
               Vector2f(newPos.x, newPos.y + size * pawnDirection);
-          std::string lastPosString = position.substr(position.length() - 5);
-          Vector2f startingPos = toCoord(lastPosString[0], lastPosString[1]);
-          Vector2f lastPos = toCoord(lastPosString[2], lastPosString[3]);
-
-          if (enPassantPos == lastPos &&
-              abs(int(startingPos.y - lastPos.y)) == 2 * size) {
-            for (int i = 0; i < 32; i++)
-              if (f[i].sprite.getPosition() == enPassantPos)
-                f[i].sprite.setPosition(-100, -100);
-            isValid = true;
+          if (position.length() >= 5) {
+            std::string lastPosString = position.substr(position.length() - 5);
+            Vector2f startingPos = toCoord(lastPosString[0], lastPosString[1]);
+            Vector2f lastPos = toCoord(lastPosString[2], lastPosString[3]);
+            if (enPassantPos == lastPos &&
+                abs(int(startingPos.y - lastPos.y)) == 2 * size) {
+              for (int i = 0; i < 32; i++)
+                if (f[i].sprite.getPosition() == enPassantPos)
+                  f[i].sprite.setPosition(-100, -100);
+              isValid = true;
+            } else {
+              isValid = false;
+            }
           } else {
             isValid = false;
           }
