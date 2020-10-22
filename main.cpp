@@ -1,4 +1,5 @@
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include <iostream>
 #include <string>
 
@@ -901,12 +902,27 @@ void loadPosition() {
 
 int main() {
   // Render SFML main window.
-  RenderWindow window(VideoMode(908, 910), "The Chess!", Style::Close);
+  RenderWindow window(VideoMode(908, 910), "SFML Chess", Style::Close);
 
   // Setup chess board and pieces.
   Texture t1, t2;
-  t1.loadFromFile("images/figures.png");
-  t2.loadFromFile("images/board.png");
+  t1.loadFromFile("assets/images/figures.png");
+  t2.loadFromFile("assets/images/board.png");
+  
+  sf::SoundBuffer moveBuffer, victoryBuffer, defeatBuffer;
+  if (!moveBuffer.loadFromFile("assets/audio/move.wav"))
+    return -1;
+  if (!victoryBuffer.loadFromFile("assets/audio/victory.wav"))
+    return -1;
+  if (!defeatBuffer.loadFromFile("assets/audio/defeat.wav"))
+    return -1;
+  sf::Sound moveSound, victorySound, defeatSound;
+  moveSound.setBuffer(moveBuffer);
+  victorySound.setBuffer(victoryBuffer);
+  defeatSound.setBuffer(defeatBuffer);
+  
+  victorySound.setVolume(10.f);
+  defeatSound.setVolume(10.f);
 
   Sprite s(t1);
   Sprite sBoard(t2);
@@ -938,6 +954,7 @@ int main() {
             position.erase(position.length() - 6, 5);
             promotionIndex = 0;
             loadPosition();
+            moveSound.play();
           }
         }
       }
@@ -1032,6 +1049,8 @@ int main() {
                 destinationIndex = l;
             }
             move(str, "");
+            moveSound.play();
+            
             f[n].sprite.setPosition(newPos);
             if (!check(f[n].isWhite)) {
               f[n].moves += 1;
@@ -1070,6 +1089,7 @@ int main() {
             // In case of a checkmate, color the King purple.
             if (check(!f[n].isWhite) && !isMovementPossible(!f[n].isWhite)) {
               std::cout << "CHECK MATE" << std::endl;
+              victorySound.play();
               checkmate = true;
               for (int l = 0; l < 32; l++) {
                 if (abs(f[l].value) == 5 && f[l].isWhite != f[n].isWhite) {
@@ -1092,6 +1112,7 @@ int main() {
             // If stalemate occurred, color both Kings yellow.
             if (!check(!f[n].isWhite) && !isMovementPossible(!f[n].isWhite)) {
               std::cout << "STALEMATE" << std::endl;
+              defeatSound.play();
               stalemate = true;
               for (int l = 0; l < 32; l++) {
                 if (abs(f[l].value) == 5) {
